@@ -1,0 +1,281 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model account {
+    account_number String    @id @default("") @db.Char(5)
+    flag           String    @default("") @db.Char(1)
+    password       String    @default("") @db.VarChar(300)
+    active         Boolean   @default(true)
+    creation_date  DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time  DateTime  @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user   String    @default("") @db.Char(5)
+    modified_date  DateTime? @db.Date
+    modified_time  DateTime? @db.Time(6)
+    modifier_user  String    @default("") @db.Char(5)
+    profile        profile   @relation(fields: [account_number], references: [account_number])
+}
+
+model authority {
+    account_number String    @default("") @db.Char(5)
+    flag           String    @default("") @db.Char(1)
+    program_id     String    @default("") @db.Char(5)
+    creation_date  DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time  DateTime  @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user   String    @default("") @db.Char(5)
+    modified_date  DateTime? @db.Date
+    modified_time  DateTime? @db.Time(6)
+    modifier_user  String    @default("") @db.Char(5)
+    profile        profile   @relation(fields: [account_number], references: [account_number])
+    programs       programs  @relation(fields: [program_id], references: [program_id])
+
+    @@id([account_number, program_id])
+}
+
+model discard {
+    discard_id     String           @id @default("") @db.Char(11)
+    flag           String           @default("") @db.Char(1)
+    discard_date   DateTime         @default(dbgenerated("CURRENT_DATE")) @db.Date
+    reason         String           @default(dbgenerated("''::bpchar")) @db.VarChar(50)
+    remark         String           @default(dbgenerated("''::bpchar")) @db.VarChar(50)
+    creation_date  DateTime         @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time  DateTime         @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user   String           @default("") @db.Char(5)
+    modified_date  DateTime?        @db.Date
+    modified_time  DateTime?        @db.Time(6)
+    modifier_user  String           @default("") @db.Char(5)
+    discard_detail discard_detail[]
+}
+
+model discard_detail {
+    discard_id    String    @default("") @db.Char(11)
+    flag          String    @default("") @db.Char(1)
+    pallet_id     String    @default("") @db.Char(5)
+    type          String    @default("") @db.Char(1)
+    creation_date DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time DateTime  @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user  String    @default("") @db.Char(5)
+    modified_date DateTime? @db.Date
+    modified_time DateTime? @db.Time(6)
+    modifier_user String    @default("") @db.Char(5)
+    discard       discard   @relation(fields: [discard_id], references: [discard_id])
+    pallet        pallet    @relation(fields: [pallet_id, type], references: [pallet_id, type])
+
+    @@id([discard_id, pallet_id, type])
+}
+
+model pallet {
+    pallet_id              String                  @default("") @db.Char(5)
+    flag                   String                  @default("") @db.Char(1)
+    type                   String                  @default("") @db.Char(1)
+    discard_status         Boolean                 @default(false)
+    creation_date          DateTime                @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time          DateTime                @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user           String                  @default("") @db.Char(5)
+    modified_date          DateTime?               @db.Date
+    modified_time          DateTime?               @db.Time(6)
+    modifier_user          String                  @default("") @db.Char(5)
+    pallet_type            pallet_type             @relation(fields: [type], references: [pallet_type_id])
+    discard_detail         discard_detail[]
+    pallet_lend_detail     pallet_lend_detail[]
+    pallet_return_detail   pallet_return_detail[]
+    supplier_pallet_detail supplier_pallet_detail?
+
+    @@id([pallet_id, type])
+}
+
+model pallet_lend {
+    lend_id                                                 String               @id @default("") @db.Char(11)
+    flag                                                    String               @default("") @db.Char(1)
+    lend_date                                               DateTime             @default(dbgenerated("CURRENT_DATE")) @db.Date
+    order_number                                            String               @default("") @db.VarChar(50)
+    source_warehouse_id                                     String               @default("") @db.Char(9)
+    destination_warehouse_id                                String               @default("") @db.Char(9)
+    remark                                                  String               @default("") @db.VarChar(200)
+    creation_date                                           DateTime             @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time                                           DateTime             @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user                                            String               @default("") @db.Char(5)
+    modified_date                                           DateTime?            @db.Date
+    modified_time                                           DateTime?            @db.Time(6)
+    modifier_user                                           String               @default("") @db.Char(5)
+    supplier_pallet_lend_destination_warehouse_idTosupplier supplier             @relation("pallet_lend_destination_warehouse_idTosupplier", fields: [destination_warehouse_id], references: [warehouse_id])
+    supplier_pallet_lend_source_warehouse_idTosupplier      supplier             @relation("pallet_lend_source_warehouse_idTosupplier", fields: [source_warehouse_id], references: [warehouse_id])
+    pallet_lend_detail                                      pallet_lend_detail[]
+}
+
+model pallet_lend_detail {
+    lend_id       String      @default("") @db.Char(11)
+    type          String      @default("") @db.Char(1)
+    pallet_id     String      @default("") @db.Char(5)
+    flag          String      @default("") @db.Char(1)
+    remark        String      @default("") @db.VarChar(200)
+    creation_date DateTime    @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time DateTime    @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user  String      @default("") @db.Char(5)
+    modified_date DateTime?   @db.Date
+    modified_time DateTime?   @db.Time(6)
+    modifier_user String      @default("") @db.Char(5)
+    pallet_lend   pallet_lend @relation(fields: [lend_id], references: [lend_id])
+    pallet        pallet      @relation(fields: [type, pallet_id], references: [type, pallet_id])
+
+    @@id([lend_id, type, pallet_id])
+}
+
+model pallet_return {
+    return_id                                                 String                 @id @default("") @db.Char(11)
+    flag                                                      String                 @default("") @db.Char(1)
+    return_date                                               DateTime               @default(dbgenerated("CURRENT_DATE")) @db.Date
+    source_warehouse_id                                       String                 @default("") @db.Char(9)
+    destination_warehouse_id                                  String                 @default("") @db.Char(9)
+    remark                                                    String                 @default("") @db.VarChar(200)
+    creation_date                                             DateTime               @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time                                             DateTime               @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user                                              String                 @default("") @db.Char(5)
+    modified_date                                             DateTime?              @db.Date
+    modified_time                                             DateTime?              @db.Time(6)
+    modifier_user                                             String                 @default("") @db.Char(5)
+    supplier_pallet_return_destination_warehouse_idTosupplier supplier               @relation("pallet_return_destination_warehouse_idTosupplier", fields: [destination_warehouse_id], references: [warehouse_id])
+    supplier_pallet_return_source_warehouse_idTosupplier      supplier               @relation("pallet_return_source_warehouse_idTosupplier", fields: [source_warehouse_id], references: [warehouse_id])
+    pallet_return_detail                                      pallet_return_detail[]
+}
+
+model pallet_return_detail {
+    return_id     String        @default("") @db.Char(11)
+    type          String        @default("") @db.Char(1)
+    pallet_id     String        @default("") @db.Char(5)
+    flag          String        @default("") @db.Char(1)
+    remark        String        @default("") @db.VarChar(200)
+    creation_date DateTime      @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time DateTime      @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user  String        @default("") @db.Char(5)
+    modified_date DateTime?     @db.Date
+    modified_time DateTime?     @db.Time(6)
+    modifier_user String        @default("") @db.Char(5)
+    pallet_return pallet_return @relation(fields: [return_id], references: [return_id])
+    pallet        pallet        @relation(fields: [type, pallet_id], references: [type, pallet_id])
+
+    @@id([return_id, type, pallet_id])
+}
+
+model pallet_type {
+    pallet_type_id   String    @id @default("") @db.Char(1)
+    pallet_type_name String?   @default(dbgenerated("''::bpchar")) @db.VarChar(12)
+    remark           String?   @default(dbgenerated("''::bpchar")) @db.VarChar(100)
+    flag             String    @default("") @db.Char(1)
+    creation_date    DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time    DateTime  @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user     String    @default("") @db.Char(5)
+    modified_date    DateTime? @db.Date
+    modified_time    DateTime? @db.Time(6)
+    modifier_user    String?   @db.Char(5)
+    pallet           pallet[]
+}
+
+model profile {
+    account_number String      @id @default("") @db.Char(5)
+    flag           String      @default("") @db.Char(1)
+    user_name      String      @default("") @db.VarChar(20)
+    email          String      @default("") @db.VarChar(50)
+    creation_date  DateTime    @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time  DateTime    @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user   String      @default("") @db.Char(5)
+    modified_date  DateTime?   @db.Date
+    modified_time  DateTime?   @db.Time(6)
+    modifier_user  String      @default("") @db.Char(5)
+    account        account?
+    authority      authority[]
+}
+
+model prog_encoding {
+    program_id    String    @default("") @db.Char(5)
+    constvalue    String    @default("") @db.VarChar(32)
+    start_num     Int       @default(0)
+    now_num       Int?      @default(0)
+    num_length    Int?
+    flag          String?   @default("") @db.Char(1)
+    creation_date DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time DateTime  @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user  String?   @default("") @db.Char(5)
+    modified_date DateTime? @db.Date
+    modified_time DateTime? @db.Time(6)
+    modifier_user String?   @default("") @db.Char(5)
+
+    @@id([program_id, constvalue])
+}
+
+model programs {
+    program_id     String      @id @default("") @db.Char(5)
+    flag           String      @default("") @db.Char(1)
+    program_name   String      @default("") @db.VarChar(50)
+    sub_chidren    Boolean     @default(false)
+    parent_prog_id String      @default("") @db.Char(5)
+    app_url        String      @default("") @db.VarChar(50)
+    toolip         String      @default("") @db.VarChar(100)
+    app_icon       String      @default("") @db.VarChar(100)
+    creation_date  DateTime    @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time  DateTime    @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user   String      @default("") @db.Char(5)
+    modified_date  DateTime?   @db.Date
+    modified_time  DateTime?   @db.Time(6)
+    modifier_user  String      @default("") @db.Char(5)
+    item_num       Int         @default(1)
+    authority      authority[]
+}
+
+model supplier {
+    warehouse_id                                                   String                   @id @default("") @db.Char(9)
+    flag                                                           String                   @default("") @db.Char(1)
+    warehouse_name                                                 String                   @default("") @db.VarChar(50)
+    telephone                                                      String                   @default("") @db.VarChar(20)
+    pallet_base                                                    Int
+    remark                                                         String                   @default("") @db.VarChar(200)
+    creation_date                                                  DateTime                 @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time                                                  DateTime                 @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user                                                   String                   @default("") @db.Char(5)
+    modified_date                                                  DateTime?                @db.Date
+    modified_time                                                  DateTime?                @db.Time(6)
+    modifier_user                                                  String                   @default("") @db.Char(5)
+    sup_type_id                                                    Int                      @default(0)
+    supplier_type                                                  supplier_type            @relation(fields: [sup_type_id], references: [sup_type_id])
+    pallet_lend_pallet_lend_destination_warehouse_idTosupplier     pallet_lend[]            @relation("pallet_lend_destination_warehouse_idTosupplier")
+    pallet_lend_pallet_lend_source_warehouse_idTosupplier          pallet_lend[]            @relation("pallet_lend_source_warehouse_idTosupplier")
+    pallet_return_pallet_return_destination_warehouse_idTosupplier pallet_return[]          @relation("pallet_return_destination_warehouse_idTosupplier")
+    pallet_return_pallet_return_source_warehouse_idTosupplier      pallet_return[]          @relation("pallet_return_source_warehouse_idTosupplier")
+    supplier_pallet_detail                                         supplier_pallet_detail[]
+}
+
+model supplier_pallet_detail {
+    warehouse_id  String    @default("") @db.Char(9)
+    pallet_id     String    @default("") @db.Char(5)
+    type          String    @default("") @db.Char(1)
+    flag          String    @default("") @db.Char(1)
+    creation_date DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time DateTime  @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user  String    @default("") @db.Char(5)
+    modified_date DateTime? @db.Date
+    modified_time DateTime? @db.Time(6)
+    modifier_user String    @default("") @db.Char(5)
+    pallet        pallet    @relation(fields: [pallet_id, type], references: [pallet_id, type])
+    supplier      supplier  @relation(fields: [warehouse_id], references: [warehouse_id])
+
+    @@id([pallet_id, type])
+}
+
+model supplier_type {
+    sup_type_id   Int        @id @default(0)
+    sup_type_name String?    @default(dbgenerated("''::bpchar")) @db.VarChar(12)
+    remark        String?    @default(dbgenerated("''::bpchar")) @db.VarChar(100)
+    flag          String     @default("") @db.Char(1)
+    creation_date DateTime   @default(dbgenerated("CURRENT_DATE")) @db.Date
+    creation_time DateTime   @default(dbgenerated("CURRENT_TIME")) @db.Time(6)
+    creator_user  String     @default("") @db.Char(5)
+    modified_date DateTime?  @db.Date
+    modified_time DateTime?  @db.Time(6)
+    modifier_user String?    @db.Char(5)
+    supplier      supplier[]
+}
